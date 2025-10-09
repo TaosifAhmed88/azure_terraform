@@ -1,32 +1,31 @@
-#az login --use-device-code
 
-# 1. Create Resource Group
-resource "azurerm_resource_group" "rg" {
-  name     = "myResourceGroup"
-  location = "East US"
+# 1. Linking Resource Group
+data "azurerm_resource_group" "rg" {
+  name = "1-9c038aac-playground-sandbox"
 }
+
 
 # 2. Create Virtual Network (VNet)
 resource "azurerm_virtual_network" "vnet" {
   name                = "myVNet"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  address_space       = ["10.0.0.0/16"]
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  address_space       = ["10.1.0.0/16"]
 }
 
 # 3. Create Subnet
 resource "azurerm_subnet" "subnet" {
   name                 = "mySubnet"
-  resource_group_name  = azurerm_resource_group.rg.name
+  resource_group_name  = data.azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.1.0/24"]
+  address_prefixes     = ["10.1.1.0/24"]
 }
 
 # 4. Create Public IP for VM
 resource "azurerm_public_ip" "public_ip" {
   name                = "vmPublicIP"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   allocation_method   = "Static"  # Change from "Dynamic" to "Static"
   sku                 = "Standard" # Ensure Standard SKU is specified
@@ -36,8 +35,8 @@ resource "azurerm_public_ip" "public_ip" {
 # 5. Create Network Security Group (NSG) and Allow SSH (Port 22)
 resource "azurerm_network_security_group" "nsg" {
   name                = "vmNSG"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   security_rule {
     name                       = "AllowSSH"
@@ -61,8 +60,8 @@ resource "azurerm_subnet_network_security_group_association" "nsg_assoc" {
 # 7. Create Network Interface (NIC)
 resource "azurerm_network_interface" "nic" {
   name                = "vmNIC"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "internal"
@@ -75,8 +74,8 @@ resource "azurerm_network_interface" "nic" {
 # 8. Create Virtual Machine (VM)
 resource "azurerm_linux_virtual_machine" "vm" {
   name                = "myVM"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  resource_group_name = data.azurerm_resource_group.rg.name
+  location            = data.azurerm_resource_group.rg.location
   size                = "Standard_B1s"
   admin_username      = "azureuser"
   network_interface_ids = [azurerm_network_interface.nic.id]
